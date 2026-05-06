@@ -21,17 +21,18 @@ function addPlayer() {
   render();
 }
 
+// THIS FUNCTION LOADS THE DATA INTO YOUR HTML
 function render() {
-  // Update Player List with Play Counts
+  // 1. Update Player List (THIS SHOWS THE PLAYED COUNT)
   document.getElementById("playerList").innerHTML =
     players.map(p => `
       <div class="player">
-        <span>${p} <span class="play-count-tag">${playCounts[p] || 0} games played</span></span>
+        <span><strong>${p}</strong> <span class="play-count-tag">${playCounts[p] || 0} games</span></span>
         <button onclick="removePlayer('${p}')" style="background: #ff4b2b; color: white; padding: 4px 8px; font-size: 10px;">X</button>
       </div>
     `).join("");
 
-  // Update Leaderboard
+  // 2. Update Leaderboard
   document.getElementById("leaderboard").innerHTML =
     Object.entries(leaderboard)
       .sort((a, b) => b[1] - a[1])
@@ -52,98 +53,94 @@ function removePlayer(name) {
   render();
 }
 
-function getAvailablePool() {
-  // If fewer than 4 players are left unplayed, reset the cycle
-  if ((players.length - playedInCurrentCycle.length) < 4) {
-    playedInCurrentCycle = [];
+// RANDOM SHUFFLE FUNCTION (Fixes the "not shuffling" issue)
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
   }
-  return players.filter(p => !playedInCurrentCycle.includes(p));
+  return array;
 }
 
-function pickTeam(pool, preferredPlayers) {
-  let team = [];
-  // Sort: prioritize players who were in the "preferred" list (winners or losers)
-  let candidates = [...pool].sort((a, b) => {
-    const aPref = preferredPlayers.includes(a) ? -1 : 1;
-    const bPref = preferredPlayers.includes(b) ? -1 : 1;
-    return aPref - bPref;
-  });
+function getAvailablePool() {
+  let unplayed = players.filter(p => !playedInCurrentCycle.includes(p));
+  
+  // Reset cycle if we don't have enough people for a full match
+  if (unplayed.length < 4) {
+    playedInCurrentCycle = [];
+    unplayed = [...players];
+  }
+  
+  return shuffle(unplayed); // Always shuffle the pool before picking
+}
 
-  for (let p of candidates) {
-    if (team.length === 0) {
-      team.push(p);
-    } else if (team.length === 1) {
-      // Check if they have teamed up before
-      if (!partnerHistory[team[0]].includes(p)) {
-        team.push(p);
-        break;
-      }
+function pickTeam(pool) {
+  let team = [];
+  if (pool.length < 2) return pool;
+
+  // Try to find a partner that hasn't played with the first person recently
+  team.push(pool[0]);
+  for (let i = 1; i < pool.length; i++) {
+    if (!partnerHistory[team[0]].includes(pool[i])) {
+      team.push(pool[i]);
+      break;
     }
   }
 
-  // Fallback: If no new partner found, just take the next available person
-  if (team.length < 2) team = candidates.slice(0, 2);
+  // Fallback if everyone has already played together
+  if (team.length < 2) {
+    team.push(pool[1]);
+  }
   
   return team;
 }
 
 function startMatch() {
   if (players.length < 4) {
-    alert("You need at least 4 players to start!");
+    alert("You need at least 4 players!");
     return;
   }
 
   let pool = getAvailablePool();
   
-  // Pick Team A (Tries to pick from last winners)
-  const teamA = pickTeam(pool, lastWinners);
+  // Pick Team A
+  const teamA = pickTeam(pool);
   
-  // Filter out Team A to pick Team B
+  // Pick Team B from what is left
   let remainingPool = pool.filter(p => !teamA.includes(p));
-  
-  // Pick Team B (Tries to pick from last losers)
-  const teamB = pickTeam(remainingPool, lastLosers);
+  const teamB = pickTeam(remainingPool);
 
-  // Mark these 4 as "played" for this cycle
+  // Mark as played so they don't repeat until the cycle resets
   playedInCurrentCycle.push(...teamA, ...teamB);
 
   document.getElementById("court").innerHTML = `
     <div class="match-display">
-      <div class="team-container">
-        <strong>Team A:</strong> ${teamA[0]} & ${teamA[1]}
-      </div>
+      <div class="team-container"><strong>Team A:</strong> ${teamA.join(" & ")}</div>
       <div class="vs">VS</div>
-      <div class="team-container">
-        <strong>Team B:</strong> ${teamB[0]} & ${teamB[1]}
-      </div>
+      <div class="team-container"><strong>Team B:</strong> ${teamB.join(" & ")}</div>
       <div style="margin-top: 15px;">
         <button onclick="recordResult(['${teamA[0]}','${teamA[1]}'], ['${teamB[0]}','${teamB[1]}'], 'A')">Team A Wins</button>
-        <button onclick="recordResult(['${teamA[0]}','${teamA[1]}'], ['${teamB[0]}','${teamB[1]}'], 'B')">Team B Wins</button>
+        <button onclick="recordResult(['${teamB[0]}','${teamB[1]}'], ['${teamA[0]}','${teamA[1]}'], 'B')">Team B Wins</button>
       </div>
     </div>
   `;
 }
 
-function recordResult(teamA, teamB, winnerSide) {
-  const winners = winnerSide === 'A' ? teamA : teamB;
-  const losers = winnerSide === 'A' ? teamB : teamA;
-
-  // Update Stats
+function recordResult(winners, losers, side) {
+  // Update Wins
   winners.forEach(p => leaderboard[p]++);
-  [...teamA, ...teamB].forEach(p => playCounts[p]++);
+  
+  // Update Play Counts (IMPORTANT: This is what you wanted to see)
+  [...winners, ...losers].forEach(p => {
+    playCounts[p] = (playCounts[p] || 0) + 1;
+  });
 
-  // Store for next match priority
-  lastWinners = [...winners];
-  lastLosers = [...losers];
-
-  // Record partnership to avoid immediate repeats
-  partnerHistory[teamA[0]].push(teamA[1]);
-  partnerHistory[teamA[1]].push(teamA[0]);
-  partnerHistory[teamB[0]].push(teamB[1]);
-  partnerHistory[teamB[1]].push(teamB[0]);
+  // Track Partners to prevent repeating teams
+  partnerHistory[winners[0]].push(winners[1]);
+  partnerHistory[winners[1]].push(winners[0]);
+  partnerHistory[losers[0]].push(losers[1]);
+  partnerHistory[losers[1]].push(losers[0]);
 
   render();
-  
-  // Clear court display until next "Start Match" click or auto-start
-  document.getElementById("court").innerHTML = `<p style="color: #00c6ff;">Result recorded! Click Start Match for next game.</p>`;
+  document.getElementById("court").innerHTML = `<button onclick="startMatch()" style="width: 100%;">Next Match</button>`;
 }
