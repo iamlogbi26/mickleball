@@ -1,10 +1,11 @@
 {
   "name": "Mickleball App v1.01",
-  "short_name": "Pickleball",
-  "start_url": ".",
+  "short_name": "Mickleball",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000428",
   "theme_color": "#00c6ff",
+  "description": "Pickleball rotation and leaderboard tracker",
   "icons": [
     {
       "src": "icon-192.png",
