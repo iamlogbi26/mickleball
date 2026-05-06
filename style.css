@@ -106,3 +106,40 @@ button:active {
   font-size: 1.4rem;
   margin: 5px 0;
 }
+.courts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.court-card {
+  border: 1px solid rgba(0, 198, 255, 0.3) !important;
+  position: relative;
+}
+
+.court-card h3 {
+  margin-top: 0;
+  color: #00c6ff;
+  font-size: 1.1rem;
+}
+
+.setup-btn {
+  width: 100%;
+  background: #00c6ff;
+  margin: 10px 0;
+}
+
+.delete-btn {
+  background: transparent;
+  color: #ff4b2b;
+  border: 1px solid #ff4b2b;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  margin-top: 10px;
+}
+
+.delete-btn:hover {
+  background: #ff4b2b;
+  color: white;
+}
