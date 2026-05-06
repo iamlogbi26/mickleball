@@ -60,20 +60,23 @@ button:active {
   transform: scale(0.95);
 }
 
+.play-count-tag {
+  font-size: 0.75rem;
+  background: rgba(0, 198, 255, 0.2);
+  color: #00c6ff;
+  padding: 2px 6px;
+  border-radius: 5px;
+  margin-left: 10px;
+  font-weight: normal;
+}
+
 .player {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.play-count-tag {
-  font-size: 0.75rem;
-  opacity: 0.6;
-  margin-left: 10px;
-  font-style: italic;
-  color: #00c6ff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 600;
 }
 
 .badge {
