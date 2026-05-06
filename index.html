@@ -18,12 +18,14 @@
     <button onclick="addPlayer()">Add Player</button>
   </div>
 
-  <div class="panel glass">
-    <h2>Court</h2>
-    <div id="court">
-        <button onclick="startMatch()" style="width: 100%; margin: 0;">Start Next Match</button>
-    </div>
+
+<div class="panel glass">
+  <h2>Courts Control</h2>
+  <button onclick="addCourt()" style="background: #28a745; color: white; width: 100%;">+ Add New Court</button>
+  <div id="courtsWrapper" class="courts-grid">
+    <!-- Multiple courts will appear here -->
   </div>
+</div>
 
   <div class="panel glass">
     <h2>Players</h2>
