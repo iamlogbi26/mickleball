@@ -1,0 +1,61 @@
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #000428, #004e92);
+  color: white;
+}
+
+.title {
+  font-family: Futura, sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+.app {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+.panel {
+  margin: 15px 0;
+  padding: 15px;
+  border-radius: 16px;
+}
+
+.glass {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+input {
+  padding: 10px;
+  width: 60%;
+  border-radius: 10px;
+  border: none;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 10px;
+  margin-left: 5px;
+  background: #00c6ff;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.player {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px;
+}
+
+.badge {
+  background: #00c6ff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: black;
+}

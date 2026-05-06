@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mickleball App v1.01</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+<div class="app">
+
+  <h1 class="title">Mickleball App v1.01 🥒</h1>
+
+  <div class="panel glass">
+    <input id="playerName" placeholder="Add player name"/>
+    <button onclick="addPlayer()">Add Player</button>
+  </div>
+
+  <div class="panel glass">
+    <h2>Players</h2>
+    <div id="playerList"></div>
+  </div>
+
+  <div class="panel glass">
+    <h2>Court</h2>
+    <button onclick="startMatch()">Start Match</button>
+    <div id="court"></div>
+  </div>
+
+  <div class="panel glass">
+    <h2>Leaderboard</h2>
+    <div id="leaderboard"></div>
+  </div>
+
+</div>
+
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
