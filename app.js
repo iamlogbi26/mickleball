@@ -1,38 +1,46 @@
 let players = [];
-let playedInCurrentCycle = []; // Tracks who has played in the current round
+let playedInCurrentCycle = []; 
+let lastWinners = [];
+let lastLosers = [];
 let leaderboard = {};
-let playCounts = {}; // Track total games played per player
-let lastTeammates = {}; // Prevent same teammates repeating immediately
+let playCounts = {}; 
+let partnerHistory = {}; 
 
 function addPlayer() {
-  const name = document.getElementById("playerName").value.trim();
+  const nameInput = document.getElementById("playerName");
+  const name = nameInput.value.trim();
+  
   if (!name || players.includes(name)) return;
 
   players.push(name);
   leaderboard[name] = 0;
   playCounts[name] = 0;
-  lastTeammates[name] = null;
+  partnerHistory[name] = [];
 
-  document.getElementById("playerName").value = "";
+  nameInput.value = "";
   render();
 }
 
 function render() {
-  // Render Player List with Play Counts
+  // Update Player List with Play Counts
   document.getElementById("playerList").innerHTML =
     players.map(p => `
       <div class="player">
-        ${p} <small>(${playCounts[p]} games)</small>
-        <button onclick="removePlayer('${p}')">X</button>
+        <span>${p} <span class="play-count-tag">${playCounts[p] || 0} games played</span></span>
+        <button onclick="removePlayer('${p}')" style="background: #ff4b2b; color: white; padding: 4px 8px; font-size: 10px;">X</button>
       </div>
     `).join("");
 
-  // Render Leaderboard
+  // Update Leaderboard
   document.getElementById("leaderboard").innerHTML =
     Object.entries(leaderboard)
       .sort((a, b) => b[1] - a[1])
-      .map(([p, w]) => `<div>${p} <span class="badge">${w} wins</span></div>`)
-      .join("");
+      .map(([p, w]) => `
+        <div class="player">
+          <span>${p}</span>
+          <span class="badge">${w} wins</span>
+        </div>
+      `).join("");
 }
 
 function removePlayer(name) {
@@ -40,59 +48,78 @@ function removePlayer(name) {
   playedInCurrentCycle = playedInCurrentCycle.filter(p => p !== name);
   delete leaderboard[name];
   delete playCounts[name];
-  delete lastTeammates[name];
+  delete partnerHistory[name];
   render();
 }
 
-function getAvailablePlayers() {
-  // If everyone has played, reset the cycle
-  if (playedInCurrentCycle.length >= players.length || (players.length - playedInCurrentCycle.length) < 4) {
+function getAvailablePool() {
+  // If fewer than 4 players are left unplayed, reset the cycle
+  if ((players.length - playedInCurrentCycle.length) < 4) {
     playedInCurrentCycle = [];
   }
+  return players.filter(p => !playedInCurrentCycle.includes(p));
+}
 
-  // Get players who haven't played this cycle
-  let pool = players.filter(p => !playedInCurrentCycle.includes(p));
+function pickTeam(pool, preferredPlayers) {
+  let team = [];
+  // Sort: prioritize players who were in the "preferred" list (winners or losers)
+  let candidates = [...pool].sort((a, b) => {
+    const aPref = preferredPlayers.includes(a) ? -1 : 1;
+    const bPref = preferredPlayers.includes(b) ? -1 : 1;
+    return aPref - bPref;
+  });
+
+  for (let p of candidates) {
+    if (team.length === 0) {
+      team.push(p);
+    } else if (team.length === 1) {
+      // Check if they have teamed up before
+      if (!partnerHistory[team[0]].includes(p)) {
+        team.push(p);
+        break;
+      }
+    }
+  }
+
+  // Fallback: If no new partner found, just take the next available person
+  if (team.length < 2) team = candidates.slice(0, 2);
   
-  // Shuffle pool to ensure random variety
-  return pool.sort(() => Math.random() - 0.5);
+  return team;
 }
 
 function startMatch() {
   if (players.length < 4) {
-    alert("Need at least 4 players!");
+    alert("You need at least 4 players to start!");
     return;
   }
 
-  let pool = getAvailablePlayers();
-  let match = [];
+  let pool = getAvailablePool();
+  
+  // Pick Team A (Tries to pick from last winners)
+  const teamA = pickTeam(pool, lastWinners);
+  
+  // Filter out Team A to pick Team B
+  let remainingPool = pool.filter(p => !teamA.includes(p));
+  
+  // Pick Team B (Tries to pick from last losers)
+  const teamB = pickTeam(remainingPool, lastLosers);
 
-  // Logic to prevent same teammates
-  for (let i = 0; i < pool.length; i++) {
-    if (match.length === 4) break;
-    let candidate = pool[i];
-    
-    // Simple check: if this is the 2nd or 4th person, check if they were 
-    // teamed up with the previous person last time
-    let partnerIdx = match.length === 1 ? 0 : (match.length === 3 ? 2 : -1);
-    
-    if (partnerIdx !== -1 && lastTeammates[match[partnerIdx]] === candidate) {
-        continue; // Skip this person for this specific slot if possible
-    }
-    match.push(candidate);
-  }
-
-  // Fallback: If logic is too restrictive, just take the first 4
-  if (match.length < 4) match = pool.slice(0, 4);
-
-  // Mark as played in current cycle
-  match.forEach(p => playedInCurrentCycle.push(p));
+  // Mark these 4 as "played" for this cycle
+  playedInCurrentCycle.push(...teamA, ...teamB);
 
   document.getElementById("court").innerHTML = `
-    <div class="match-box">
-      <p><strong>Team A:</strong> ${match[0]} & ${match[1]}</p>
-      <p><strong>Team B:</strong> ${match[2]} & ${match[3]}</p>
-      <button onclick="recordResult(['${match[0]}','${match[1]}'], ['${match[2]}','${match[3]}'], 'A')">Team A Wins</button>
-      <button onclick="recordResult(['${match[0]}','${match[1]}'], ['${match[2]}','${match[3]}'], 'B')">Team B Wins</button>
+    <div class="match-display">
+      <div class="team-container">
+        <strong>Team A:</strong> ${teamA[0]} & ${teamA[1]}
+      </div>
+      <div class="vs">VS</div>
+      <div class="team-container">
+        <strong>Team B:</strong> ${teamB[0]} & ${teamB[1]}
+      </div>
+      <div style="margin-top: 15px;">
+        <button onclick="recordResult(['${teamA[0]}','${teamA[1]}'], ['${teamB[0]}','${teamB[1]}'], 'A')">Team A Wins</button>
+        <button onclick="recordResult(['${teamA[0]}','${teamA[1]}'], ['${teamB[0]}','${teamB[1]}'], 'B')">Team B Wins</button>
+      </div>
     </div>
   `;
 }
@@ -101,21 +128,22 @@ function recordResult(teamA, teamB, winnerSide) {
   const winners = winnerSide === 'A' ? teamA : teamB;
   const losers = winnerSide === 'A' ? teamB : teamA;
 
-  // Update Wins
+  // Update Stats
   winners.forEach(p => leaderboard[p]++);
-  
-  // Update Play Counts
   [...teamA, ...teamB].forEach(p => playCounts[p]++);
 
-  // Record Teammates to prevent immediate repeats
-  lastTeammates[teamA[0]] = teamA[1];
-  lastTeammates[teamA[1]] = teamA[0];
-  lastTeammates[teamB[0]] = teamB[1];
-  lastTeammates[teamB[1]] = teamB[0];
+  // Store for next match priority
+  lastWinners = [...winners];
+  lastLosers = [...losers];
+
+  // Record partnership to avoid immediate repeats
+  partnerHistory[teamA[0]].push(teamA[1]);
+  partnerHistory[teamA[1]].push(teamA[0]);
+  partnerHistory[teamB[0]].push(teamB[1]);
+  partnerHistory[teamB[1]].push(teamB[0]);
 
   render();
   
-  // "Winners/Losers rotation" logic: 
-  // In a social rotation, we usually trigger the next match immediately
-  startMatch();
+  // Clear court display until next "Start Match" click or auto-start
+  document.getElementById("court").innerHTML = `<p style="color: #00c6ff;">Result recorded! Click Start Match for next game.</p>`;
 }
